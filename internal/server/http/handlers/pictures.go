@@ -11,7 +11,7 @@ import (
 )
 
 type PicturesHandler struct {
-	imageProvider imageprovider.ImageProvider
+	ImageProvider imageprovider.ImageProvider
 }
 
 func (h *PicturesHandler) Get(c *gin.Context) {
@@ -31,5 +31,16 @@ func (h *PicturesHandler) Get(c *gin.Context) {
 		})
 		return
 	}
-	c.String(200, "Success")
+
+	urls, err := h.ImageProvider.GetImagesURLs(*req.StartDate, *req.EndDate)
+	if err != nil {
+		log.Debugf("Failed to fetch urls: %s", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"urls": urls,
+	})
 }

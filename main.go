@@ -5,6 +5,8 @@ import (
 
 	"github.com/PawlikMateusz/TWF0ZXVzeiBHb2dvQXBwcyBOQVNB/internal/config"
 	"github.com/PawlikMateusz/TWF0ZXVzeiBHb2dvQXBwcyBOQVNB/internal/server/http/handlers"
+	"github.com/PawlikMateusz/TWF0ZXVzeiBHb2dvQXBwcyBOQVNB/pkg/imageprovider/nasa"
+
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
@@ -18,8 +20,13 @@ func main() {
 		log.Fatal("Failed to load env variables")
 	}
 
+	// setup nasa picture provider
+	nasaAPI := nasa.NewRemoteProvider("https://nasa.com", "my_key", 10)
+
 	// setup routes
-	picturesHandler := handlers.PicturesHandler{}
+	picturesHandler := handlers.PicturesHandler{
+		ImageProvider: nasaAPI,
+	}
 
 	router := gin.Default()
 	router.GET("/pictures", picturesHandler.Get)
