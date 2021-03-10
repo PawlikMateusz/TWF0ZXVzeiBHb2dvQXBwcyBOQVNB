@@ -1,4 +1,4 @@
-package imageproviders
+package imageprovider
 
 import "time"
 
