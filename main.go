@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/PawlikMateusz/TWF0ZXVzeiBHb2dvQXBwcyBOQVNB/internal/config"
 	"github.com/PawlikMateusz/TWF0ZXVzeiBHb2dvQXBwcyBOQVNB/internal/server/http/handlers"
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
 	// load configuration
-	log.Info("Loading configuration")
+	log.Debug("Staring app")
+	log.Debug("Loading configuration")
 	config.SetDefaults()
 	if err := config.LoadEnvVars(); err != nil {
 		log.Fatal("Failed to load env variables")
@@ -20,14 +20,12 @@ func main() {
 
 	// setup routes
 	picturesHandler := handlers.PicturesHandler{}
-	r := mux.NewRouter()
-	r.HandleFunc("/pictures", picturesHandler.Get).Methods("GET")
-	http.Handle("/", r)
+
+	router := gin.Default()
+	router.GET("/pictures", picturesHandler.Get)
 
 	// run http server
-	serverPort := config.GetPort()
-	log.Infof("Starting server at port %d", serverPort)
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil); err != nil {
+	if err := router.Run(fmt.Sprintf(":%d", config.GetPort())); err != nil {
 		log.Fatal(err)
 	}
 }
