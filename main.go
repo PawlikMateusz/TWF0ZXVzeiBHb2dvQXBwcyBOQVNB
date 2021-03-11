@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// setup nasa picture provider
-	nasaAPI := nasa.NewRemoteProvider("https://nasa.com", "my_key", 10)
+	nasaAPI := nasa.NewRemoteProvider(config.GetApiKey(), config.GetMaxConcurrentRequests())
 
 	// setup routes
 	picturesHandler := handlers.PicturesHandler{
