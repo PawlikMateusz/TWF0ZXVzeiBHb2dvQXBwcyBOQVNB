@@ -15,7 +15,7 @@ const (
 const (
 	DefaultPort                  = 8080
 	DefaultApiKey                = "DEMO_KEY"
-	DefaultMaxConcurrentRequests = 10
+	DefaultMaxConcurrentRequests = 5
 )
 
 func SetDefaults() {
