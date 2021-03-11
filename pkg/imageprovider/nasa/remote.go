@@ -39,7 +39,7 @@ func (rp *RemoteProvider) GetImagesURLs(startDate, endDate time.Time) (urls []st
 	defer cancel()
 
 	var wg sync.WaitGroup
-	errs := make(chan error)
+	errs := make(chan error, 1)
 
 	// iterate thought all days
 	for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 1) {
@@ -47,13 +47,6 @@ func (rp *RemoteProvider) GetImagesURLs(startDate, endDate time.Time) (urls []st
 		d := d
 		go func(date time.Time) {
 			defer wg.Done()
-
-			// Check if any error occurred in any other gorouties:
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
 
 			// create request
 			req, err := rp.createRequest(ctx, rp.apiKey, d)
@@ -72,7 +65,6 @@ func (rp *RemoteProvider) GetImagesURLs(startDate, endDate time.Time) (urls []st
 			}
 			if resp.StatusCode != http.StatusOK {
 				sendAsyncError(errs, fmt.Errorf("failed to get response from external API"))
-				fmt.Println("CANCEL!")
 				cancel()
 				return
 			}
