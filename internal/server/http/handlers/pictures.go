@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/PawlikMateusz/TWF0ZXVzeiBHb2dvQXBwcyBOQVNB/internal/models"
@@ -19,7 +20,7 @@ func (h *PicturesHandler) Get(c *gin.Context) {
 	if err := c.ShouldBind(&req); err != nil {
 		log.Errorf("Failed to parse request params: %s", err)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err,
+			"error": fmt.Sprintf("Failed to parse request params: %s", err),
 		})
 		return
 	}

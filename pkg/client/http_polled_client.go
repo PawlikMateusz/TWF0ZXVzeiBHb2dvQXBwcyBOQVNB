@@ -1,26 +1,29 @@
 package client
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 type PooledHTTPClient struct {
 	httpClient  HTTPClient
 	maxPoolSize int
-	pool        chan int
+	pool        chan struct{}
 }
 
 func NewPooledHTTPClient(maxPoolSize int) *PooledHTTPClient {
 	return &PooledHTTPClient{
 		httpClient: &http.Client{
-			Timeout: 10, // TODO read from cfg or pass a param
+			Timeout: 10 * time.Second, // TODO read from cfg or pass a param
 		},
-		pool:        make(chan int, maxPoolSize),
+		pool:        make(chan struct{}, maxPoolSize),
 		maxPoolSize: maxPoolSize,
 	}
 }
 
 func (c *PooledHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	if c.maxPoolSize > 0 {
-		c.pool <- -1
+		c.pool <- struct{}{}
 		defer func() {
 			<-c.pool
 		}()
