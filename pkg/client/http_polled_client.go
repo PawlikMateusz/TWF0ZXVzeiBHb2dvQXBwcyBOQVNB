@@ -28,6 +28,9 @@ func (c *PooledHTTPClient) Do(req *http.Request) (*http.Response, error) {
 			<-c.pool
 		}()
 	}
+	if req.Context().Err() != nil {
+		return &http.Response{}, nil
+	}
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return &http.Response{}, err

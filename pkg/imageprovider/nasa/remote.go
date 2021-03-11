@@ -1,6 +1,7 @@
 package nasa
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -34,22 +35,45 @@ func NewRemoteProvider(apiKey string, maxConcurrentRequests int) *RemoteProvider
 }
 
 func (rp *RemoteProvider) GetImagesURLs(startDate, endDate time.Time) (urls []string, err error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	var wg sync.WaitGroup
+	errs := make(chan error)
+
+	// iterate thought all days
 	for d := startDate; d.Before(endDate); d = d.AddDate(0, 0, 1) {
 		wg.Add(1)
 		d := d
 		go func(date time.Time) {
 			defer wg.Done()
 
+			// Check if any error occurred in any other gorouties:
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
 			// create request
-			req, err := rp.createRequest(rp.apiKey, d)
+			req, err := rp.createRequest(ctx, rp.apiKey, d)
 			if err != nil {
+				sendAsyncError(errs, fmt.Errorf("Failed to create request: %s", err))
+				cancel()
 				return
 			}
 
 			// send request
 			resp, err := rp.httpClient.Do(req)
 			if err != nil {
+				sendAsyncError(errs, fmt.Errorf("error when making request to external API: %s", err))
+				cancel()
+				return
+			}
+			if resp.StatusCode != http.StatusOK {
+				sendAsyncError(errs, fmt.Errorf("failed to get response from external API"))
+				fmt.Println("CANCEL!")
+				cancel()
 				return
 			}
 			defer resp.Body.Close()
@@ -59,18 +83,22 @@ func (rp *RemoteProvider) GetImagesURLs(startDate, endDate time.Time) (urls []st
 			var r Response
 			err = decoder.Decode(&r)
 			if err != nil {
+				sendAsyncError(errs, fmt.Errorf("failed to decode external API response"))
+				cancel()
 				return
 			}
-			fmt.Printf("\nRESP CODE %s", resp.Status)
 			urls = append(urls, r.URL)
 		}(d)
 	}
 	wg.Wait()
+	if ctx.Err() != nil {
+		return nil, <-errs
+	}
 	return urls, nil
 }
 
-func (rp *RemoteProvider) createRequest(api_key string, date time.Time) (*http.Request, error) {
-	req, err := http.NewRequest("GET", rp.baseURL, nil)
+func (rp *RemoteProvider) createRequest(ctx context.Context, api_key string, date time.Time) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", rp.baseURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create request: %s", err)
 	}
@@ -78,6 +106,12 @@ func (rp *RemoteProvider) createRequest(api_key string, date time.Time) (*http.R
 	q.Add("api_key", rp.apiKey)
 	q.Add("date", date.Format("2006-01-02"))
 	req.URL.RawQuery = q.Encode()
-	fmt.Printf("\nURL %s", req.URL.String())
 	return req, nil
+}
+
+func sendAsyncError(ch chan error, err error) {
+	select {
+	case ch <- err:
+	default:
+	}
 }
