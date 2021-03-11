@@ -37,7 +37,7 @@ func (h *PicturesHandler) Get(c *gin.Context) {
 	if err != nil {
 		log.Debugf("Failed to fetch urls: %s", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err,
+			"error": fmt.Sprintf("Failed to fetch images: %s", err),
 		})
 		return
 	}
