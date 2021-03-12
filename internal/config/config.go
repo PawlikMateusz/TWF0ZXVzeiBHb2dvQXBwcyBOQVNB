@@ -8,7 +8,7 @@ import (
 const (
 	Port                  = "PORT"
 	ApiKey                = "API_KEY"
-	MaxConcurrentRequests = "CONCURENT_REQUESTS"
+	MaxConcurrentRequests = "CONCURRENT_REQUESTS"
 )
 
 // default values
